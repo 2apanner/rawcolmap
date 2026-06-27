@@ -1,0 +1,52 @@
+name: Build Linux Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-release:
+    name: Build Linux CUDA Release
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build Docker Image (Builder Stage)
+        run: |
+          docker build --target builder -t colmap-builder -f docker/Dockerfile .
+
+      - name: Extract Build Artifacts
+        run: |
+          # Create a temporary container from the builder image
+          CONTAINER_ID=$(docker create colmap-builder)
+          # Copy the installed files out of the container
+          docker cp $CONTAINER_ID:/colmap-install ./colmap-linux-cuda
+          # Remove the temporary container
+          docker rm $CONTAINER_ID
+          # Compress the directory
+          tar -czvf colmap-linux-cuda.tar.gz colmap-linux-cuda/
+
+      - name: Upload Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: colmap-linux-cuda.tar.gz
