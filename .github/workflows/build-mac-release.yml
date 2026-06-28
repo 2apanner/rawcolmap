@@ -80,10 +80,10 @@ jobs:
           tag_name: latest
           name: Latest Automated Build
           prerelease: true
-          files: build/COLMAP-mac.zip
+          files: build/src/colmap/exe/COLMAP-mac.zip
 
       - name: Upload Release (Tagged)
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: build/COLMAP-mac.zip
+          files: build/src/colmap/exe/COLMAP-mac.zip
